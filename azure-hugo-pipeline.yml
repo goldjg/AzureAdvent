@@ -1,0 +1,38 @@
+#Trigger this pipeline on any change to the git repo - for any branch
+trigger:
+  branches:
+    include:
+      - '*'
+
+#Use the 'azure advent' variable group setup in the DevOps portal (Pipelines > Library > Variable Groups) 
+variables:
+  - group: Azure Advent
+stages:
+
+# Build Live site ready for deployment (only trigger on 'master' branch)
+- stage: Build_Live_Site
+  jobs:
+    - template: azure-hugo-build.yml
+      parameters:
+        name: build_live_site
+        displayName: Build the Live site
+        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+        hugo_version: 0.59.1
+        hugo_baseUrl: $(AzureAdventLiveUrl)
+        hugo_params: '--minify'
+        storage_account: $(AzureAdventLiveStorAcct)
+        storage_key: $(AzureAdventLiveStorKey)
+        build_tag: hugo-live
+
+# Deploy live site artifacts to azure storage account (only trigger on 'master' branch)
+- stage: Deploy_Live_Site
+  dependsOn: Build_Live_Site
+  jobs:
+    - template: azure-hugo-deploy.yml
+      parameters:
+        name: deploy_live_site
+        displayName: Deploy the Live site
+        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+        storage_account: $(AzureAdventLiveStorAcct)
+        storage_key: $(AzureAdventLiveStorKey)
+        build_tag: hugo-live

@@ -1,0 +1,44 @@
+parameters:
+  name: ''
+  displayName: ''
+  condition: {}
+  storage_account: ''
+  storage_key: ''
+  build_tag: ''
+
+jobs:
+- job: ${{ parameters.name }}
+  displayName: ${{ parameters.displayName }}
+  pool:
+    vmImage: ubuntu-latest
+  condition: ${{ parameters.condition }}
+  steps:
+
+  # 1. Download Hugo from artifacts
+  - download: current
+    artifact: hugo-installer
+
+  # 2. Download built site from artifacts
+  - download: current
+    artifact: build-${{ parameters.build_tag }}
+
+  # 3. Install Hugo
+  - script: 'sudo dpkg -i hugo*.deb'
+    workingDirectory: '$(Pipeline.Workspace)/hugo-installer'
+    displayName: 'Installing Hugo'
+
+  # 4. Extracts the zipped site 
+  - task: ExtractFiles@1
+    displayName: 'Extracting site content'
+    inputs:
+      archiveFilePatterns: '$(Pipeline.Workspace)/build-${{ parameters.build_tag }}/hugo-build.zip'
+      destinationFolder: '$(Pipeline.Workspace)/build-${{ parameters.build_tag }}/deploy'
+      cleanDestinationFolder: false
+
+  # 5. Run Hugo `deploy` command to publish to Azure Storage blob (make sure to add deployment settings in Hugo website config)
+  - script: 'hugo deploy --maxDeletes -1'
+    workingDirectory: '$(Pipeline.Workspace)/build-${{ parameters.build_tag }}/deploy'
+    displayName: 'Deploying build to Azure Storage account'
+    env:
+      AZURE_STORAGE_ACCOUNT: ${{ parameters.storage_account }}
+      AZURE_STORAGE_KEY: ${{ parameters.storage_key }}

@@ -1,0 +1,65 @@
+parameters:
+  name: ''
+  displayName: ''
+  condition: {}
+  hugo_version: ''
+  hugo_baseUrl: ''
+  hugo_params: ''
+  storage_account: ''
+  storage_key: ''
+  build_tag: ''
+
+jobs:
+- job: ${{ parameters.name }}
+  displayName: ${{ parameters.displayName }}
+  pool:
+    vmImage: ubuntu-latest
+  condition: ${{ parameters.condition }}
+
+  steps:
+    # 1. Optimise .JPG images using Mogrify 
+    #    (part of ImageMagick - installed by default in Ubuntu build for AzDevOps)
+    - script: find . -type f -iname "*.JPG" -o -name "*.JPG" | xargs mogrify -filter Triangle -define filter:support=2 -unsharp 0.25x0.25+8+0.065 -dither None -posterize 136 -quality 82 -define jpeg:fancy-upsampling=off -interlace none -colorspace sRGB -strip -verbose
+      displayName: Optimise JPEG images to improve website loading times
+
+      # 2. Download Hugo executable
+    - script: wget https://github.com/gohugoio/hugo/releases/download/v${{ parameters.hugo_version }}/hugo_${{ parameters.hugo_version }}_Linux-64bit.deb -O '$(Pipeline.Workspace)/hugo_${{ parameters.hugo_version }}_Linux-64bit.deb'
+      displayName: Download Hugo v${{ parameters.hugo_version }} Linux x64
+
+    # 3. Install Hugo
+    - script: sudo dpkg -i $(Pipeline.Workspace)/hugo*.deb
+      displayName: Install Hugo
+
+    # 4. Run Hugo to build the website
+    - script: hugo --baseUrl '${{ parameters.hugo_baseUrl }}' ${{ parameters.hugo_params }}
+      displayName: Build site with Hugo
+
+    # 5. Copy the content to a staging folder so we can archive it
+    - task: CopyFiles@2
+      displayName: Copy site content to staging folder 'deploy'
+      inputs:
+        Contents: |
+          config.toml
+          public/**
+          resources/**
+          static/**
+          themes/**
+        TargetFolder: deploy
+
+    # 6. Archive the built website into a ZIP archive
+    - task: ArchiveFiles@2
+      displayName: Archive the build output
+      inputs:
+        rootFolderOrFile: ./deploy
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Pipeline.Workspace)/hugo-build.zip
+        replaceExistingArchive: true
+
+    # 7. Publish Hugo installer for use in deploy stage
+    - publish: $(Pipeline.Workspace)/hugo_${{ parameters.hugo_version }}_Linux-64bit.deb
+      artifact: hugo-installer
+
+    # 8. Publish archive for use in deploy stage
+    - publish: $(Pipeline.Workspace)/hugo-build.zip
+      artifact: build-${{ parameters.build_tag }}

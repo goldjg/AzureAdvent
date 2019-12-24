@@ -1,0 +1,63 @@
+LanguageCode = "en-gb"
+baseURL = "https://azureadventstor.z35.web.core.windows.net/"
+Title = "Azure Advent Calendar 2019"
+#canonifyurls = true
+paginate = 5
+#DisqusShortname = ""
+theme = "casper"
+[menu]
+
+  [[menu.main]]
+    identifier = "Home"
+    name = "Home"
+    url = "/"
+    weight = -100
+
+[params]
+  description = "Demo site"
+  cover = "images/cover.jpg"
+  author = "Azure Advent"
+  authorlocation = "Scotland, United Kingdom"
+  authorwebsite = "https://azureadventstor.z35.web.core.windows.net/"
+  authorbio= "Demo Author"
+  #logo = "images/logo.gif"
+  #googleAnalyticsUserID = "UA-123456789-1"
+  # Optional RSS-Link, if not provided it defaults to the standard index.xml
+  #RSSLink = "http://feeds.feedburner.com/..."
+  #githubName = "vjeantet"
+  twitterName = "cirrius_tech"
+  #facebookName = ""
+  # codepenName = ""
+  # linkedinName = ""
+  # stackoverflowId = ""
+  # keybaseName = ""
+  # flickrName = ""
+  # instagramName = ""
+  # email = ""
+  # pinterestName = ""
+  # googlePlusName = ""
+  # set true if you are not proud of using Hugo (true will hide the footer note "Proudly published with HUGO.....")
+  hideHUGOSupport = false
+  
+  # Setting a value will load highlight.js and enable syntax highlighting using the style selected.
+  # See https://github.com/isagalaev/highlight.js/tree/master/src/styles for available styles
+  # A preview of above styles can be viewed at https://highlightjs.org/static/demo/
+  hjsStyle = "obsidian"
+
+[sitemap]
+  changefreq = "daily"
+  filename = "sitemap.xml"
+  priority = 0.5
+
+[deployment]
+# By default, files are uploaded in an arbitrary order.
+# Files that match the regular expressions in the "Order" list
+# will be uploaded first, in the listed order.
+order = [".jpg$", ".gif$"]
+
+
+[[deployment.targets]]
+# An arbitrary name for this target.
+# Azure Blob Storage; see https://gocloud.dev/howto/blob/#azure
+NAME = "azure advent"
+URL = "azblob://$web"
